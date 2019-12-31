@@ -21,25 +21,28 @@ with open(config_file) as f:
     
 dist_ratio=find_ratio([dfb,dfu],config_file)
 
-for curr_frame_b in range(cfg['bottom_first_frame'],567):  #cap_b.get(7)
+for curr_frame_b in range(cfg['bottom_first_frame']+20,cfg['bottom_first_frame']+30):  #cap_b.get(7)
     cap_b.set(1,curr_frame_b)
     ret, frameB = cap_b.read()
     
-    curr_frame_u=2*curr_frame_b+15 ############use a variable!!!!
+    curr_frame_u=2*curr_frame_b+8 ############use a variable!!!!
     cap_u.set(1,curr_frame_u)
     ret, frameU = cap_u.read()
         
-    u_loc, frameU=plot_coords('u',curr_frame_u,dfu,frameU,config_file)
-    b_loc,frameB=plot_coords('b',curr_frame_b,dfb,frameB,config_file)
+    u_loc, frameU=plot_coords(u,dfu,cfg['upper_body_parts'],frameU)
+    b_loc,frameB=plot_coords(b,dfb,cfg['bottom_body_parts'],frameB)
     
     frameB =cv2.resize(frameB,None,fx=dist_ratio,fy=dist_ratio)
     
     frameB=rotate_frame(frameB,90-180,90,90-4,0,0,24,24)
-    b_loc=find_coords(frameB,'b',config_file)
+    b_loc=find_coords(frameB,cfg['bottom_body_parts'])
+    update_data_frame(b,dfb,b_loc)
+    fix_label('TailBase','Head1',u,b,dfu,dfb,new_df,b)
     
-    merged_frame,loc_df =merge_frames(frameU,frameB,'b',b_loc,u_loc,config_file,[curr_frame_u,dfu,'TailBase','Head1'],plot=False)
-    df=merge_data_frames(curr_frame_b,loc_df,u_loc,df,scorer,config_file)
-
+    
+    image,target_loc=merge_labels(frameU,frameB,u,b,dfu,dfb,config_file,new_df,b,plot=True)    df=merge_data_frames(curr_frame_b,loc_df,u_loc,df,scorer,config_file)
+    update_data_frame(b,new_df,target_loc)
+    update_data_frame(b,new_df,u_loc)
     
     if curr_frame_b%150==0:
         print(f'bottom frame={curr_frame_b}')
